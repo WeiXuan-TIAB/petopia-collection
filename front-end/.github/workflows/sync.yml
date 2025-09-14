@@ -1,0 +1,31 @@
+name: Sync Frontend to petopia-collection
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout petopia-frontend
+        uses: actions/checkout@v4
+
+      - name: Clone petopia-collection repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PETOPIA_TOKEN }}@github.com/WeiXuan-TIAB/petopia-collection.git
+          cd petopia-collection
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 清空並建立 front-end 資料夾
+          rm -rf front-end
+          mkdir -p front-end
+
+          # 複製前端專案內容過去（排除 .git）
+          rsync -av --exclude='.git' ../ front-end/
+
+          git add .
+          git commit -m "Sync frontend from petopia-frontend" || echo "No changes"
+          git push origin main

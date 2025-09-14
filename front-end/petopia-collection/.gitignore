@@ -1,0 +1,51 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Optional cache
+.cache/
+.next/cache/
+
+# Local testing
+coverage/
+
+# Vue build outputs
+/dist/
+/coverage/
+/*.local
+
+# VuePress build output
+.vuepress/dist
+
+# Vue 3 Vite cache
+.vite/
+
+.vscode/
+
