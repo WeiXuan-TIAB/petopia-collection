@@ -1,0 +1,1418 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model admin_users {
+  id              Int                @id @default(autoincrement())
+  name            String             @unique(map: "name") @db.VarChar(32)
+  credential_hash String?            @db.VarChar(255)
+  status          admin_users_status @default(pending)
+  created_at      DateTime?          @default(now()) @db.DateTime(0)
+  updated_at      DateTime?          @default(now()) @db.DateTime(0)
+}
+
+model adoption_agencies {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  address       String?         @db.VarChar(255)
+  email         String?         @db.VarChar(100)
+  phone         String?         @db.VarChar(50)
+  created_at    DateTime        @default(now()) @db.DateTime(0)
+  updated_at    DateTime        @default(now()) @db.DateTime(0)
+  deleted_at    DateTime?       @db.DateTime(0)
+  adoption_pets adoption_pets[]
+}
+
+model adoption_pets {
+  id                Int                  @id @default(autoincrement())
+  agency_id         Int
+  name              String               @db.VarChar(50)
+  species           String?              @db.VarChar(50)
+  breed             String?              @db.VarChar(50)
+  age               Int?
+  sex               adoption_pets_sex    @default(U)
+  description       String?              @db.Text
+  status            adoption_pets_status @default(available)
+  condition_text    String?              @db.Text
+  valid_until       DateTime?            @db.DateTime(0)
+  created_at        DateTime             @default(now()) @db.DateTime(0)
+  updated_at        DateTime             @default(now()) @db.DateTime(0)
+  deleted_at        DateTime?            @db.DateTime(0)
+  adoption_agencies adoption_agencies    @relation(fields: [agency_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "adoption_pets_ibfk_1")
+
+  @@index([agency_id], map: "agency_id")
+}
+
+model area_geometries {
+  id       Int                  @id @default(autoincrement())
+  place_id Int
+  type     area_geometries_type
+  data     Json
+
+  @@index([place_id], map: "place_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model categories {
+  id                 Int                  @id @default(autoincrement())
+  code               String               @db.Char(4)
+  name               String               @db.VarChar(50)
+  description        String?              @db.Text
+  parent_id          Int?
+  created_at         DateTime             @default(now()) @db.DateTime(0)
+  updated_at         DateTime             @default(now()) @db.DateTime(0)
+  categories         categories?          @relation("categoriesTocategories", fields: [parent_id], references: [id], onUpdate: NoAction, map: "categories_ibfk_1")
+  other_categories   categories[]         @relation("categoriesTocategories")
+  products           products[]
+  promotion_products promotion_products[]
+
+  @@unique([parent_id, name], map: "uq_categories_parent_name")
+  @@index([parent_id], map: "idx_categories_parent_id")
+  @@index([parent_id], map: "parent_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model content_details {
+  content_id  Int     @id
+  content     String? @db.Text
+  video_url   String? @db.VarChar(255)
+  cover_url   String? @db.VarChar(255)
+  duration    Int?
+  description String? @db.Text
+}
+
+model coupons {
+  id               Int              @id @default(autoincrement())
+  code             String           @unique(map: "code") @db.VarChar(30)
+  description      String?          @db.Text
+  type             coupons_type
+  value            Decimal          @db.Decimal(10, 2)
+  min_order_amount Decimal?         @default(0.00) @db.Decimal(10, 2)
+  usage_limit      Int?
+  start_time       DateTime         @db.DateTime(0)
+  end_time         DateTime         @db.DateTime(0)
+  created_at       DateTime         @default(now()) @db.DateTime(0)
+  updated_at       DateTime         @default(now()) @db.DateTime(0)
+  member_coupons   member_coupons[]
+}
+
+model forum_comments {
+  id             Int                        @id @default(autoincrement())
+  content_id     Int
+  member_id      Int
+  created_at     DateTime                   @default(now()) @db.DateTime(0)
+  updated_at     DateTime                   @default(now()) @db.DateTime(0)
+  deleted_at     DateTime?                  @db.DateTime(0)
+  content        String                     @db.Text
+  target_id      Int?
+  target_type    forum_comments_target_type
+  members        members                    @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "forum_comments_ibfk_1")
+  forum_contents forum_contents             @relation(fields: [content_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "forum_comments_ibfk_2")
+
+  @@index([content_id], map: "content_id")
+  @@index([member_id], map: "member_id")
+}
+
+model forum_contents {
+  id             Int              @id @default(autoincrement())
+  member_id      Int
+  title          String           @db.VarChar(200)
+  content        String?          @db.LongText
+  status         String           @default("draft")
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now())
+  deleted_at     DateTime?
+  hashtags       Json?
+  image_url      String?
+  type           String
+  pet_category   String?
+  forum_comments forum_comments[]
+  members        members          @relation(fields: [member_id], references: [id])
+
+  @@index([member_id])
+  @@index([status])
+  @@index([type])
+}
+
+model forum_interactions {
+  id               Int                                 @id @default(autoincrement())
+  member_id        Int
+  target_type      forum_interactions_target_type
+  target_id        Int
+  interaction_type forum_interactions_interaction_type
+  created_at       DateTime                            @default(now()) @db.DateTime(0)
+  deleted_at       DateTime?                           @db.DateTime(0)
+  members          members                             @relation(fields: [member_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "forum_interactions_ibfk_1")
+
+  @@index([member_id], map: "member_id")
+}
+
+model forum_reports {
+  id          Int                       @id @default(autoincrement())
+  member_id   Int
+  target_type forum_reports_target_type
+  target_id   Int
+  reason      String                    @db.Text
+  status      forum_reports_status      @default(pending)
+  created_at  DateTime                  @default(now()) @db.DateTime(0)
+  reviewed_at DateTime?                 @db.DateTime(0)
+  handled_by  Int?
+
+  @@index([handled_by], map: "handled_by")
+  @@index([member_id], map: "member_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model itineraries {
+  id                  Int                   @id @default(autoincrement())
+  title               String                @db.VarChar(255)
+  description         String?               @db.Text
+  days                Int
+  created_at          DateTime?             @default(now()) @db.DateTime(0)
+  original_price      Decimal               @db.Decimal(10, 2)
+  currency            String                @db.VarChar(10)
+  discount_price      Decimal?              @db.Decimal(10, 2)
+  photo               String?               @db.VarChar(255)
+  itinerary_locations itinerary_locations[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model itinerary_locations {
+  id           Int         @id @default(autoincrement())
+  itinerary_id Int
+  country      String      @db.VarChar(100)
+  Prefecture   String      @db.VarChar(100)
+  Place        String      @db.VarChar(100)
+  itineraries  itineraries @relation(fields: [itinerary_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "itinerary_locations_ibfk_1")
+
+  @@index([itinerary_id], map: "itinerary_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model itinerary_nodes {
+  id            Int      @id @default(autoincrement())
+  itinerary_id  Int
+  activity_name String   @db.VarChar(255)
+  description   String?  @db.Text
+  activity_date DateTime @db.Date
+  time_slot     String   @db.VarChar(10)
+  location      String?  @db.VarChar(255)
+
+  @@index([itinerary_id], map: "itinerary_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model itinerary_order_logs {
+  id                     Int      @id @default(autoincrement())
+  itinerary_orders_id    Int
+  itinerary_nodes_before Int
+  itinerary_nodes_after  Int
+  created_at             DateTime @default(now()) @db.DateTime(0)
+
+  @@index([itinerary_nodes_after], map: "itinerary_nodes_after")
+  @@index([itinerary_nodes_before], map: "itinerary_nodes_before")
+  @@index([itinerary_orders_id], map: "itinerary_orders_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model itinerary_order_nodes {
+  itinerary_orders_id Int
+  itinerary_nodes_id  Int
+  created_at          DateTime @default(now()) @db.DateTime(0)
+
+  @@id([itinerary_orders_id, itinerary_nodes_id])
+  @@index([itinerary_nodes_id], map: "itinerary_nodes_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model itinerary_orders {
+  id          Int      @id @default(autoincrement())
+  member_id   Int
+  total_price Decimal? @db.Decimal(10, 2)
+  status      String   @db.VarChar(20)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+
+  @@index([member_id], map: "member_id")
+}
+
+model member_actions {
+  id          Int                        @id @default(autoincrement())
+  member_id   Int?
+  product_id  Int?
+  action_type member_actions_action_type
+  value       Int?
+  created_at  DateTime                   @default(now()) @db.DateTime(0)
+  members     members?                   @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "member_actions_ibfk_1")
+  products    products?                  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "member_actions_ibfk_2")
+
+  @@index([member_id], map: "member_id")
+  @@index([product_id], map: "product_id")
+}
+
+model member_addresses {
+  id         Int       @id @default(autoincrement())
+  member_id  Int
+  zipcode    Int
+  city       String    @db.VarChar(16)
+  area       String    @db.VarChar(16)
+  street     String    @db.VarChar(255)
+  name       String    @db.VarChar(32)
+  mobile     String    @db.VarChar(16)
+  phone      String?   @db.VarChar(20)
+  is_main    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([member_id], map: "fk_address_member")
+}
+
+model member_coupons {
+  id         Int       @id @default(autoincrement())
+  member_id  Int
+  coupon_id  Int
+  is_used    Boolean?  @default(false)
+  used_at    DateTime? @db.DateTime(0)
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  members    members   @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "member_coupons_ibfk_1")
+  coupons    coupons   @relation(fields: [coupon_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "member_coupons_ibfk_2")
+
+  @@index([coupon_id], map: "coupon_id")
+  @@index([member_id], map: "member_id")
+}
+
+model member_credentials {
+  id              Int       @id @default(autoincrement())
+  member_id       Int
+  type            String?   @default("password") @db.VarChar(20)
+  provider        String?   @db.VarChar(20)
+  oauth_uid       String?   @db.VarChar(255)
+  credential_hash String    @db.VarChar(255)
+  expires_at      DateTime? @db.DateTime(0)
+  is_force_reset  Boolean?  @default(false)
+  created_at      DateTime? @default(now()) @db.DateTime(0)
+  updated_at      DateTime? @default(now()) @db.DateTime(0)
+  members         members   @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_member_credentials_member")
+
+  @@unique([member_id, type, provider], map: "uniq_credential")
+}
+
+model member_levels {
+  id            Int       @id @default(autoincrement())
+  code          String?   @unique(map: "code") @default("starter") @db.VarChar(16)
+  name          String?   @unique(map: "name") @default("新手鏟屎官") @db.VarChar(32)
+  min_points    Int       @unique(map: "min_points")
+  discount_rate Decimal   @db.Decimal(5, 2)
+  description   String    @db.Text
+  created_at    DateTime? @default(now()) @db.DateTime(0)
+  updated_at    DateTime? @default(now()) @db.DateTime(0)
+}
+
+model member_likes {
+  member_id  Int
+  product_id Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+  members    members  @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "member_likes_ibfk_1")
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "member_likes_ibfk_2")
+
+  @@id([member_id, product_id])
+  @@index([product_id], map: "product_id")
+}
+
+model member_login_logs {
+  id         Int       @id @default(autoincrement())
+  member_id  Int
+  type       String    @db.VarChar(20)
+  provider   String?   @db.VarChar(20)
+  status     String    @db.VarChar(20)
+  ip_address String    @db.VarChar(45)
+  user_agent String    @db.Text
+  error_msg  String?   @db.Text
+  created_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([member_id], map: "fk_loginlog_member")
+}
+
+model member_point_logs {
+  id            Int                        @id @default(autoincrement())
+  member_id     Int
+  ref_type      member_point_logs_ref_type
+  ref_id        Int?
+  points_before Int?                       @default(0)
+  points_change Int
+  description   String?                    @db.Text
+  created_by    Int?
+  created_at    DateTime?                  @default(now()) @db.DateTime(0)
+
+  @@index([created_by], map: "fk_pointlog_admin")
+  @@index([member_id], map: "fk_pointlog_member")
+}
+
+model member_point_status {
+  member_id  Int       @id
+  level_id   Int
+  points     Int?      @default(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([level_id], map: "fk_point_level")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model members {
+  id                  Int                  @id @default(autoincrement())
+  name                String?              @db.VarChar(32)
+  nickname            String?              @unique(map: "nickname") @db.VarChar(16)
+  gender              members_gender?
+  email               String               @unique(map: "email") @db.VarChar(255)
+  birthday            DateTime?            @db.Date
+  mobile              String?              @unique(map: "mobile") @db.VarChar(16)
+  status              members_status       @default(pending)
+  avatar              String?              @db.VarChar(255)
+  last_login          DateTime?            @db.DateTime(0)
+  latitude            Decimal?             @db.Decimal(10, 7)
+  longitude           Decimal?             @db.Decimal(10, 7)
+  is_online           Boolean?             @default(false)
+  location_visibility Boolean?             @default(false)
+  created_at          DateTime?            @default(now()) @db.DateTime(0)
+  updated_at          DateTime?            @default(now()) @db.DateTime(0)
+  forum_comments      forum_comments[]
+  forum_contents      forum_contents[]
+  forum_interactions  forum_interactions[]
+  member_actions      member_actions[]
+  member_coupons      member_coupons[]
+  member_credentials  member_credentials[]
+  member_likes        member_likes[]
+  password_resets     password_resets[]
+  pet_likes           pet_likes[]
+  pet_profiles        pet_profiles[]
+  place_favorites     place_favorites[]
+  place_photos        place_photos[]
+  place_reviews       place_reviews[]
+  product_reviews     product_reviews[]
+  reservations        reservations[]
+}
+
+model order_items {
+  id         Int      @id @default(autoincrement())
+  order_id   Int?
+  var_id     Int?
+  price      Int
+  quantity   Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([order_id], map: "order_id")
+  @@index([var_id], map: "var_id")
+}
+
+model order_status_logs {
+  id           Int                             @id @default(autoincrement())
+  order_id     Int?
+  order_status order_status_logs_order_status?
+  changed_by   Int?
+  created_at   DateTime                        @default(now()) @db.DateTime(0)
+  updated_at   DateTime                        @default(now()) @db.DateTime(0)
+
+  @@index([changed_by], map: "changed_by")
+  @@index([order_id], map: "order_id")
+}
+
+model orders {
+  id           Int                  @id @default(autoincrement())
+  customer_id  Int?
+  created_at   DateTime             @default(now()) @db.DateTime(0)
+  updated_at   DateTime             @default(now()) @db.DateTime(0)
+  order_num    String?              @unique(map: "order_num") @db.VarChar(20)
+  order_status orders_order_status? @default(pending)
+
+  @@index([customer_id], map: "customer_id")
+}
+
+model pet_breeds {
+  id          Int         @id @default(autoincrement())
+  species_id  Int
+  name        String      @db.VarChar(64)
+  description String?     @db.Text
+  created_at  DateTime?   @default(now()) @db.DateTime(0)
+  updated_at  DateTime?   @default(now()) @db.DateTime(0)
+  pet_species pet_species @relation(fields: [species_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_breed_species")
+
+  @@unique([species_id, name], map: "uniq_species_breed")
+  @@index([species_id], map: "idx_breed_species")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pet_chat_messages {
+  id               Int                             @id @default(autoincrement())
+  match_id         Int
+  sender_member_id Int
+  message_text     String                          @db.Text
+  message_type     pet_chat_messages_message_type? @default(text)
+  image_url        String?                         @db.VarChar(500)
+  is_read          Boolean?                        @default(false)
+  sent_at          DateTime?                       @default(now()) @db.Timestamp(0)
+
+  @@index([match_id, sent_at(sort: Desc)], map: "idx_match_messages")
+  @@index([sender_member_id, sent_at(sort: Desc)], map: "idx_sender_messages")
+  @@index([sender_member_id, is_read], map: "idx_sender_unread")
+  @@index([match_id, is_read], map: "idx_unread_messages")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pet_chat_read_status {
+  id                   Int       @id @default(autoincrement())
+  match_id             Int
+  member_id            Int
+  last_read_message_id Int?
+  last_read_at         DateTime? @default(now()) @db.Timestamp(0)
+  updated_at           DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([match_id, member_id], map: "uniq_match_member")
+  @@index([last_read_message_id], map: "idx_last_read_message")
+  @@index([member_id], map: "idx_member_read")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pet_likes {
+  id                Int          @id @default(autoincrement())
+  from_member_id    Int
+  to_pet_profile_id Int
+  created_at        DateTime?    @default(now()) @db.Timestamp(0)
+  members           members      @relation(fields: [from_member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_likes_member")
+  pet_profiles      pet_profiles @relation(fields: [to_pet_profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_likes_pet_profile")
+
+  @@unique([from_member_id, to_pet_profile_id], map: "uniq_member_like_pet")
+  @@index([from_member_id], map: "idx_member_likes")
+  @@index([to_pet_profile_id], map: "idx_pet_likes")
+}
+
+model pet_matches {
+  id              Int       @id @default(autoincrement())
+  member1_id      Int
+  member2_id      Int
+  pet1_profile_id Int
+  pet2_profile_id Int
+  matched_at      DateTime? @default(now()) @db.Timestamp(0)
+  is_active       Boolean?  @default(true)
+  member_low_id   Int?
+  member_high_id  Int?
+
+  @@unique([member_low_id, member_high_id], map: "uniq_member_pair")
+  @@index([member1_id, is_active], map: "idx_member1_matches")
+  @@index([member2_id, is_active], map: "idx_member2_matches")
+  @@index([pet1_profile_id], map: "idx_pet1_matches")
+  @@index([pet2_profile_id], map: "idx_pet2_matches")
+}
+
+model pet_personalities {
+  id                        Int                         @id @default(autoincrement())
+  personality               String                      @unique(map: "personality") @db.VarChar(20)
+  pet_profile_personalities pet_profile_personalities[]
+}
+
+model pet_profile_personalities {
+  id                Int               @id @default(autoincrement())
+  pet_profile_id    Int
+  personality_id    Int
+  pet_personalities pet_personalities @relation(fields: [personality_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_profile_personalities_personality")
+  pet_profiles      pet_profiles      @relation(fields: [pet_profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_profile_personalities_profile")
+
+  @@unique([pet_profile_id, personality_id], map: "uniq_pet_personality")
+  @@index([personality_id], map: "fk_personality")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pet_profile_photos {
+  id             Int          @id @default(autoincrement())
+  pet_profile_id Int
+  photo_url      String       @db.VarChar(300)
+  photo_order    Int?         @default(1) @db.TinyInt
+  created_at     DateTime?    @default(now()) @db.Timestamp(0)
+  pet_profiles   pet_profiles @relation(fields: [pet_profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_profile_photos_profile")
+
+  @@unique([pet_profile_id, photo_order], map: "uniq_pet_profile_photo_order")
+  @@index([pet_profile_id, photo_order], map: "idx_profile_photos")
+}
+
+model pet_profiles {
+  id                        Int                         @id @default(autoincrement())
+  member_id                 Int
+  name                      String                      @db.VarChar(32)
+  species                   Int
+  breed                     String                      @db.VarChar(64)
+  gender                    pet_profiles_gender
+  birthday                  DateTime?                   @db.Date
+  weight_kg                 Decimal                     @db.Decimal(5, 2)
+  is_neutered               Boolean?                    @default(false)
+  avatar_url                String?                     @db.VarChar(255)
+  vaccinated_at             DateTime?                   @db.Date
+  created_at                DateTime?                   @default(now()) @db.DateTime(0)
+  pet_likes                 pet_likes[]
+  pet_profile_personalities pet_profile_personalities[]
+  pet_profile_photos        pet_profile_photos[]
+  members                   members                     @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_member")
+  pet_species               pet_species                 @relation(fields: [species], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pet_species")
+
+  @@index([species], map: "fk_pet_species")
+  @@index([member_id], map: "idx_pet_member")
+}
+
+model pet_species {
+  id           Int            @id @default(autoincrement())
+  code         String         @unique(map: "code") @db.VarChar(32)
+  name         String         @db.VarChar(32)
+  icon_url     String         @db.VarChar(255)
+  description  String?        @db.Text
+  created_at   DateTime?      @default(now()) @db.DateTime(0)
+  updated_at   DateTime?      @default(now()) @db.DateTime(0)
+  pet_breeds   pet_breeds[]
+  pet_profiles pet_profiles[]
+}
+
+model pet_titles {
+  id    Int    @id @default(autoincrement())
+  title String @unique(map: "title") @db.VarChar(20)
+}
+
+model place_business_hours {
+  id          Int       @id @default(autoincrement())
+  place_id    Int
+  day_of_week Int       @db.TinyInt
+  open_time   DateTime? @db.Time(0)
+  close_time  DateTime? @db.Time(0)
+  is_closed   Boolean?  @default(false)
+  places      places    @relation(fields: [place_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bh_place")
+
+  @@unique([place_id, day_of_week], map: "uniq_place_day")
+  @@index([place_id], map: "idx_bh_place")
+}
+
+model place_categories {
+  id                       Int                        @id @default(autoincrement())
+  name                     String                     @unique(map: "name") @db.VarChar(50)
+  color                    String?                    @default("#666666") @db.VarChar(7)
+  icon                     String?                    @db.VarChar(255)
+  pin_color                String?                    @db.Char(7)
+  created_at               DateTime?                  @default(now()) @db.Timestamp(0)
+  place_category_relations place_category_relations[]
+}
+
+model place_category_relations {
+  id               Int              @id @default(autoincrement())
+  place_id         Int
+  category_id      Int
+  created_at       DateTime?        @default(now()) @db.Timestamp(0)
+  places           places           @relation(fields: [place_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "place_category_relations_ibfk_1")
+  place_categories place_categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "place_category_relations_ibfk_2")
+
+  @@unique([place_id, category_id], map: "unique_place_category")
+  @@index([category_id], map: "idx_place_category_relations_category")
+  @@index([place_id], map: "idx_place_category_relations_place")
+}
+
+model place_favorites {
+  id         Int       @id @default(autoincrement())
+  member_id  Int
+  place_id   Int
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  members    members   @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_place_favorites_member")
+  places     places    @relation(fields: [place_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_place_favorites_place")
+
+  @@unique([member_id, place_id], map: "uniq_member_place")
+  @@index([member_id], map: "idx_place_fav_member")
+  @@index([place_id], map: "idx_place_fav_place")
+}
+
+model place_features {
+  id                    Int      @id @default(autoincrement())
+  place_id              Int      @unique(map: "uniq_place_features")
+  indoor_dining         Boolean? @default(false)
+  takeout               Boolean? @default(false)
+  outdoor_seating       Boolean? @default(false)
+  pet_menu              Boolean? @default(false)
+  parking               Boolean? @default(false)
+  wheelchair_accessible Boolean? @default(false)
+  places                places   @relation(fields: [place_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_place_features_place")
+
+  @@index([place_id], map: "idx_pf_place")
+}
+
+model place_photos {
+  id            Int                     @id @default(autoincrement())
+  place_id      Int
+  member_id     Int?
+  review_id     Int?
+  url           String                  @db.VarChar(500)
+  caption       String?                 @db.VarChar(200)
+  photo_type    place_photos_photo_type
+  is_main       Boolean?                @default(false)
+  is_approved   Boolean?                @default(true)
+  created_at    DateTime?               @default(now()) @db.Timestamp(0)
+  updated_at    DateTime?               @default(now()) @db.Timestamp(0)
+  members       members?                @relation(fields: [member_id], references: [id], onUpdate: NoAction, map: "fk_pp_member")
+  places        places                  @relation(fields: [place_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pp_place")
+  place_reviews place_reviews?          @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pp_review")
+
+  @@index([member_id], map: "idx_pp_member")
+  @@index([place_id, photo_type, is_main], map: "idx_pp_place_type_main")
+  @@index([review_id], map: "idx_pp_review")
+}
+
+model place_reviews {
+  id           Int            @id @default(autoincrement())
+  place_id     Int
+  member_id    Int
+  rating       Int            @db.UnsignedTinyInt
+  comment      String?        @db.Text
+  created_at   DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at   DateTime?      @default(now()) @db.Timestamp(0)
+  place_photos place_photos[]
+  members      members        @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pr_member")
+  places       places         @relation(fields: [place_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pr_place")
+
+  @@index([member_id, place_id], map: "idx_member_reviews")
+  @@index([place_id, rating], map: "idx_place_reviews")
+}
+
+model places {
+  id                       Int                        @id @default(autoincrement())
+  name                     String                     @db.VarChar(100)
+  address                  String                     @db.VarChar(200)
+  district                 String                     @db.VarChar(50)
+  phone                    String?                    @db.VarChar(30)
+  latitude                 Decimal                    @db.Decimal(10, 8)
+  longitude                Decimal                    @db.Decimal(11, 8)
+  description              String?                    @db.Text
+  website                  String?                    @db.VarChar(255)
+  created_at               DateTime?                  @default(now()) @db.Timestamp(0)
+  updated_at               DateTime?                  @default(now()) @db.Timestamp(0)
+  place_business_hours     place_business_hours[]
+  place_category_relations place_category_relations[]
+  place_favorites          place_favorites[]
+  place_features           place_features?
+  place_photos             place_photos[]
+  place_reviews            place_reviews[]
+
+  @@index([district], map: "idx_places_district")
+  @@index([latitude, longitude], map: "idx_places_location")
+}
+
+model product_colors {
+  id               Int                @id @default(autoincrement())
+  hex_code         String             @db.VarChar(7)
+  color_name       String             @db.VarChar(50)
+  product_variants product_variants[]
+}
+
+model product_flavors {
+  id               Int                @id @default(autoincrement())
+  flav_name        String             @db.VarChar(10)
+  product_variants product_variants[]
+}
+
+model product_images {
+  id               Int                     @id @default(autoincrement())
+  product_id       Int?
+  var_id           Int?
+  img_url          String                  @db.Text
+  img_type         product_images_img_type
+  created_at       DateTime                @default(now()) @db.DateTime(0)
+  updated_at       DateTime                @default(now()) @db.DateTime(0)
+  products         products?               @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "product_images_ibfk_1")
+  product_variants product_variants?       @relation(fields: [var_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "product_images_ibfk_2")
+
+  @@index([product_id], map: "product_id")
+  @@index([var_id], map: "var_id")
+}
+
+model product_inventory {
+  id               Int               @id @default(autoincrement())
+  var_id           Int?
+  stock_quantity   Int
+  created_at       DateTime          @default(now()) @db.DateTime(0)
+  updated_at       DateTime          @default(now()) @db.DateTime(0)
+  product_id       Int?
+  product_variants product_variants? @relation(fields: [var_id], references: [id], onDelete: Cascade, map: "fk_product_inventory_variant")
+
+  @@unique([product_id, var_id], map: "product_id")
+  @@index([var_id], map: "var_id")
+}
+
+model product_logs {
+  id         Int                     @id @default(autoincrement())
+  product_id Int?
+  log_action product_logs_log_action
+  changed_by Int?
+  created_at DateTime                @default(now()) @db.DateTime(0)
+  updated_at DateTime                @default(now()) @db.DateTime(0)
+
+  @@index([changed_by], map: "changed_by")
+  @@index([product_id], map: "product_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_reviews {
+  id         Int      @id @default(autoincrement())
+  member_id  Int
+  product_id Int
+  rating     Int      @db.TinyInt
+  review     String?  @db.Text
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+  members    members  @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_review_member")
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_review_product")
+
+  @@unique([member_id, product_id], map: "uniq_member_product_review")
+  @@index([product_id, member_id], map: "idx_product_member")
+}
+
+model product_sizes {
+  id               Int                @id @default(autoincrement())
+  size_name        String             @db.VarChar(10)
+  product_variants product_variants[]
+}
+
+model product_variants {
+  id                Int                 @id @default(autoincrement())
+  product_id        Int?
+  color_id          Int?
+  size_id           Int?
+  flavor_id         Int?
+  created_at        DateTime            @default(now()) @db.DateTime(0)
+  updated_at        DateTime            @default(now()) @db.DateTime(0)
+  product_images    product_images[]
+  product_inventory product_inventory[]
+  product_colors    product_colors?     @relation(fields: [color_id], references: [id], map: "fk_product_variants_color")
+  product_flavors   product_flavors?    @relation(fields: [flavor_id], references: [id], map: "fk_product_variants_flavor")
+  products          products?           @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_product_variants_product")
+  product_sizes     product_sizes?      @relation(fields: [size_id], references: [id], map: "fk_product_variants_size")
+
+  @@index([color_id], map: "color_id")
+  @@index([flavor_id], map: "flavor_id")
+  @@index([product_id], map: "product_id")
+  @@index([size_id], map: "size_id")
+}
+
+model products {
+  id                 Int                  @id @default(autoincrement())
+  cat_id             Int?
+  price              Int
+  cost               Int
+  is_active          Boolean              @default(false)
+  created_at         DateTime             @default(now()) @db.DateTime(0)
+  updated_at         DateTime             @default(now()) @db.DateTime(0)
+  product_code       String               @db.VarChar(20)
+  product_desc       String               @db.Text
+  product_name       String               @db.VarChar(255)
+  member_actions     member_actions[]
+  member_likes       member_likes[]
+  product_images     product_images[]
+  product_reviews    product_reviews[]
+  product_variants   product_variants[]
+  categories         categories?          @relation(fields: [cat_id], references: [id], map: "fk_products_categories")
+  promotion_products promotion_products[]
+
+  @@index([cat_id], map: "cat_id")
+}
+
+model promotion_products {
+  id         Int         @id @default(autoincrement())
+  promo_id   Int?
+  product_id Int?
+  cat_id     Int?
+  created_at DateTime    @default(now()) @db.DateTime(0)
+  updated_at DateTime    @default(now()) @db.DateTime(0)
+  categories categories? @relation(fields: [cat_id], references: [id], map: "fk_promo_products_categories")
+  products   products?   @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_promo_products_products")
+  promotions promotions? @relation(fields: [promo_id], references: [id], onDelete: Cascade, map: "fk_promo_products_promotions")
+
+  @@index([cat_id], map: "cat_id")
+  @@index([product_id], map: "product_id")
+  @@index([promo_id], map: "promo_id")
+}
+
+model promotions {
+  id                 Int                      @id @default(autoincrement())
+  start_time         DateTime                 @db.DateTime(0)
+  end_time           DateTime                 @db.DateTime(0)
+  created_at         DateTime                 @default(now()) @db.DateTime(0)
+  updated_at         DateTime                 @default(now()) @db.DateTime(0)
+  promo_name         String?                  @db.VarChar(100)
+  promo_status       promotions_promo_status? @default(pending)
+  promo_type         promotions_promo_type?
+  promotion_products promotion_products[]
+}
+
+model promotions_rules {
+  id             Int                             @id @default(autoincrement())
+  promo_id       Int?
+  rule_type      promotions_rules_rule_type?
+  threshold      Decimal                         @db.Decimal(10, 2)
+  discount_type  promotions_rules_discount_type?
+  discount_value Decimal                         @db.Decimal(10, 2)
+  created_at     DateTime                        @default(now()) @db.DateTime(0)
+  updated_at     DateTime                        @default(now()) @db.DateTime(0)
+
+  @@index([promo_id], map: "promo_id")
+}
+
+model purchase_items {
+  id         Int      @id @default(autoincrement())
+  pur_order  Int?
+  product_id Int?
+  var_id     Int?
+  quantity   Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([product_id], map: "product_id")
+  @@index([pur_order], map: "pur_order")
+  @@index([var_id], map: "var_id")
+}
+
+model purchase_orders {
+  id           Int                           @id @default(autoincrement())
+  send_by      Int
+  created_at   DateTime                      @default(now()) @db.DateTime(0)
+  updated_at   DateTime                      @default(now()) @db.DateTime(0)
+  order_code   String                        @unique(map: "order_code") @db.VarChar(20)
+  order_status purchase_orders_order_status?
+
+  @@index([send_by], map: "send_by")
+}
+
+model report_notes {
+  id         Int      @id @default(autoincrement())
+  report_id  Int
+  admin_id   Int
+  notes      String   @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([admin_id], map: "admin_id")
+  @@index([report_id], map: "report_id")
+}
+
+model reservation_notes {
+  id              Int                               @id @default(autoincrement())
+  reservation_id  Int
+  note            String                            @db.Text
+  created_by      Int?
+  created_by_type reservation_notes_created_by_type
+  created_at      DateTime?                         @default(now()) @db.DateTime(0)
+
+  @@index([reservation_id], map: "fk_note_reservation")
+}
+
+model reservation_pets {
+  reservation_id Int
+  pet_id         Int
+  note           String?   @db.Text
+  created_at     DateTime? @default(now()) @db.DateTime(0)
+
+  @@id([reservation_id, pet_id])
+  @@index([pet_id], map: "fk_rsv_pet_profile")
+}
+
+model reservation_reminders {
+  id             Int                                 @id @default(autoincrement())
+  reservation_id Int
+  reminder_type  reservation_reminders_reminder_type
+  reminder_time  DateTime                            @db.DateTime(0)
+  sent_at        DateTime?                           @db.DateTime(0)
+  status         reservation_reminders_status
+  error_message  String?                             @db.Text
+  created_at     DateTime?                           @default(now()) @db.DateTime(0)
+  updated_at     DateTime?                           @default(now()) @db.DateTime(0)
+
+  @@index([reservation_id], map: "fk_reminder_reservation")
+}
+
+model reservation_seats {
+  reservation_id Int
+  seat_id        Int
+  created_by     Int?
+  created_at     DateTime? @default(now()) @db.DateTime(0)
+
+  @@id([reservation_id, seat_id])
+  @@index([created_by], map: "fk_rsv_seat_created_by")
+  @@index([seat_id], map: "fk_rsv_seat_seat")
+}
+
+model reservation_status_logs {
+  id              Int                                     @id @default(autoincrement())
+  reservation_id  Int
+  from_status     reservation_status_logs_from_status
+  to_status       reservation_status_logs_to_status
+  changed_by      Int?
+  changed_by_type reservation_status_logs_changed_by_type
+  reason          String?                                 @db.Text
+  created_at      DateTime?                               @default(now()) @db.DateTime(0)
+
+  @@index([reservation_id], map: "fk_statuslog_reservation")
+}
+
+model reservations {
+  id               Int                 @id @default(autoincrement())
+  member_id        Int
+  restaurant_id    Int
+  reservation_date DateTime            @db.DateTime(0)
+  start_time       DateTime            @db.DateTime(0)
+  end_time         DateTime?           @db.DateTime(0)
+  party_size       Int
+  has_pet          Boolean?            @default(false)
+  status           reservations_status @default(pending)
+  contact_phone    String?             @db.VarChar(16)
+  expire_at        DateTime?           @db.DateTime(0)
+  created_by       Int
+  created_at       DateTime?           @default(now()) @db.DateTime(0)
+  updated_by       Int
+  updated_at       DateTime?           @default(now()) @db.DateTime(0)
+  members          members             @relation(fields: [member_id], references: [id], map: "fk_resv_member")
+  restaurants      restaurants         @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, map: "fk_resv_restaurant")
+
+  @@unique([restaurant_id, reservation_date, start_time], map: "uniq_rest_date_start")
+  @@index([created_by], map: "fk_reservation_created_by")
+  @@index([member_id], map: "fk_reservation_member")
+  @@index([updated_by], map: "fk_reservation_updated_by")
+}
+
+model restaurant_business_hours {
+  id            Int         @id @default(autoincrement())
+  restaurant_id Int
+  weekday       Int         @db.TinyInt
+  start_time    DateTime    @db.Time(0)
+  end_time      DateTime    @db.Time(0)
+  note          String?     @db.VarChar(255)
+  is_closed     Boolean     @default(false)
+  created_by    Int
+  created_at    DateTime    @default(now()) @db.DateTime(0)
+  updated_by    Int
+  updated_at    DateTime    @default(now()) @db.DateTime(0)
+  restaurants   restaurants @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, map: "restaurant_business_hours_ibfk_1")
+
+  @@unique([restaurant_id, weekday, start_time, end_time], map: "uniq_business_hours")
+  @@index([created_by], map: "fk_bh_created_by")
+  @@index([updated_by], map: "fk_bh_updated_by")
+  @@index([restaurant_id, weekday, start_time], map: "idx_bh_rest_week_start")
+}
+
+model restaurant_closures {
+  id            Int       @id @default(autoincrement())
+  restaurant_id Int
+  date          DateTime  @db.Date
+  start_time    DateTime? @default(dbgenerated("'00:00:00'")) @db.Time(0)
+  end_time      DateTime? @default(dbgenerated("'23:59:59'")) @db.Time(0)
+  closure_note  String?   @db.Text
+  created_by    Int
+  created_at    DateTime? @default(now()) @db.DateTime(0)
+  updated_by    Int
+  updated_at    DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([restaurant_id, date], map: "uniq_closure_per_day")
+  @@index([created_by], map: "fk_closure_created_by")
+  @@index([updated_by], map: "fk_closure_updated_by")
+}
+
+model restaurant_photos {
+  id            Int         @id @default(autoincrement())
+  restaurant_id Int
+  url           String      @db.VarChar(255)
+  created_at    DateTime?   @default(now()) @db.DateTime(0)
+  updated_at    DateTime?   @default(now()) @db.DateTime(0)
+  restaurants   restaurants @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, map: "fk_restaurant_photos_restaurant")
+
+  @@index([restaurant_id], map: "fk_restaurant_photos_restaurant")
+}
+
+model restaurant_seat_rules {
+  id            Int       @id @default(autoincrement())
+  seat_id       Int
+  species_id    Int
+  max_weight_kg Decimal?  @db.Decimal(5, 2)
+  note          String?   @db.Text
+  created_by    Int
+  created_at    DateTime? @default(now()) @db.DateTime(0)
+  updated_by    Int
+  updated_at    DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([created_by], map: "fk_rule_created_by")
+  @@index([seat_id], map: "fk_rule_seat")
+  @@index([species_id], map: "fk_rule_species")
+  @@index([updated_by], map: "fk_rule_updated_by")
+}
+
+model restaurant_seats {
+  id            Int                      @id @default(autoincrement())
+  restaurant_id Int
+  code          String                   @db.VarChar(16)
+  area          String                   @db.VarChar(32)
+  seats         Int
+  pet_allowed   Boolean?                 @default(false)
+  status        restaurant_seats_status? @default(available)
+  note          String?                  @db.Text
+  created_by    Int
+  created_at    DateTime?                @default(now()) @db.DateTime(0)
+  updated_by    Int
+  updated_at    DateTime?                @default(now()) @db.DateTime(0)
+
+  @@unique([restaurant_id, code], map: "uniq_restaurant_seat_code")
+  @@index([created_by], map: "fk_seat_created_by")
+  @@index([updated_by], map: "fk_seat_updated_by")
+}
+
+model restaurants {
+  id                        Int                         @id @default(autoincrement())
+  email                     String                      @unique(map: "email") @db.VarChar(254)
+  tax_id                    String                      @unique(map: "tax_id") @db.Char(8)
+  name                      String                      @unique(map: "name") @db.VarChar(32)
+  phone                     String                      @unique(map: "phone") @db.VarChar(20)
+  zipcode                   Int
+  city                      String                      @db.VarChar(16)
+  area                      String                      @db.VarChar(16)
+  street                    String                      @db.VarChar(255)
+  type                      restaurants_type
+  rating                    Decimal                     @default(0.0) @db.Decimal(2, 1)
+  latitude                  Decimal                     @db.Decimal(10, 7)
+  longitude                 Decimal                     @db.Decimal(10, 7)
+  contact_name              String                      @db.VarChar(32)
+  contact_phone             String                      @unique(map: "contact_phone") @db.VarChar(16)
+  status                    restaurants_status          @default(active)
+  description               String                      @db.Text
+  thumbnail_url             String                      @db.VarChar(255)
+  banner_url                String?                     @db.VarChar(255)
+  created_by                Int
+  updated_by                Int
+  created_at                DateTime?                   @default(now()) @db.DateTime(0)
+  updated_at                DateTime?                   @default(now()) @db.DateTime(0)
+  reservations              reservations[]
+  restaurant_business_hours restaurant_business_hours[]
+  restaurant_photos         restaurant_photos[]
+
+  @@index([created_by], map: "fk_restaurant_created_by")
+  @@index([updated_by], map: "fk_restaurant_updated_by")
+}
+
+model return_items {
+  id             Int                          @id @default(autoincrement())
+  customer_id    Int?
+  return_order   Int?
+  return_id      Int?
+  item_condition return_items_item_condition?
+  quantity       Int
+  created_at     DateTime                     @default(now()) @db.DateTime(0)
+  updated_at     DateTime                     @default(now()) @db.DateTime(0)
+
+  @@index([customer_id], map: "customer_id")
+  @@index([return_id], map: "return_id")
+  @@index([return_order], map: "return_order")
+}
+
+model sales_report_items {
+  id           Int  @id @default(autoincrement())
+  report_id    Int?
+  product_id   Int?
+  var_id       Int?
+  sales_qty    Int  @default(0)
+  sales_amount Int  @default(0)
+
+  @@index([product_id], map: "product_id")
+  @@index([report_id], map: "report_id")
+  @@index([var_id], map: "var_id")
+}
+
+model sales_reports {
+  id               Int                        @id @default(autoincrement())
+  report_type      sales_reports_report_type? @default(monthly)
+  report_startdate DateTime                   @db.Date
+  report_enddate   DateTime                   @db.Date
+  generated_at     DateTime                   @db.DateTime(0)
+  generated_by     Int
+
+  @@index([generated_by], map: "generated_by")
+}
+
+model ship_items {
+  id          Int                  @id @default(autoincrement())
+  customer_id Int?
+  ship_order  Int?
+  ship_item   Int?
+  var_id      Int?
+  quantity    Int
+  delivery    ship_items_delivery? @default(stocking)
+  created_at  DateTime             @default(now()) @db.DateTime(0)
+  updated_at  DateTime             @default(now()) @db.DateTime(0)
+
+  @@index([customer_id], map: "customer_id")
+  @@index([ship_item], map: "ship_item")
+  @@index([ship_order], map: "ship_order")
+  @@index([var_id], map: "var_id")
+}
+
+model password_resets {
+  id         Int      @id @default(autoincrement())
+  member_id  Int
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+  members    members  @relation(fields: [member_id], references: [id], onDelete: Cascade)
+
+  @@index([member_id], map: "password_resets_member_id_fkey")
+}
+
+enum sales_reports_report_type {
+  weekly
+  monthly
+  yearly
+}
+
+enum area_geometries_type {
+  point
+  polygon
+  circle
+}
+
+enum forum_interactions_target_type {
+  blog
+  vlog
+  comment
+}
+
+enum forum_reports_target_type {
+  comment
+  content
+}
+
+enum member_point_logs_ref_type {
+  purchase
+  refund
+  adjust
+  redeem
+}
+
+enum order_status_logs_order_status {
+  pending
+  stocking
+  shipped
+  arrived
+  canceled
+  returned
+}
+
+enum product_logs_log_action {
+  create
+  update
+  delete
+  send
+}
+
+enum promotions_rules_rule_type {
+  count
+  combo
+  itemType
+  amount
+  freeShipping
+}
+
+enum reservation_reminders_reminder_type {
+  email
+  sms
+  app_push
+  line_bot
+}
+
+enum reservation_status_logs_from_status {
+  pending
+  confirmed
+  arrived
+  cancelled
+  no_show
+  completed
+}
+
+enum admin_users_status {
+  pending
+  active
+  suspended
+}
+
+enum coupons_type {
+  percent
+  amount
+  free_shipping
+}
+
+enum member_actions_action_type {
+  like
+  favorite
+  click
+  rating
+}
+
+enum members_gender {
+  male
+  female
+  other
+}
+
+enum reservation_status_logs_to_status {
+  pending
+  confirmed
+  arrived
+  cancelled
+  no_show
+  completed
+}
+
+enum forum_interactions_interaction_type {
+  like
+  dislike
+  share
+}
+
+enum pet_chat_messages_message_type {
+  text
+  image
+  sticker
+}
+
+enum product_images_img_type {
+  main
+  minor
+  desc
+}
+
+enum promotions_rules_discount_type {
+  percent
+  amount
+  fixed_price
+}
+
+enum reservation_notes_created_by_type {
+  member
+  admin
+  system
+}
+
+enum return_items_item_condition {
+  normal
+  scrap
+}
+
+enum forum_reports_status {
+  pending
+  reviewed
+  dismissed
+  action_taken
+}
+
+enum orders_order_status {
+  pending
+  stocking
+  shipped
+  arrived
+  canceled
+  returned
+}
+
+enum pet_profiles_gender {
+  male
+  female
+  unknown
+}
+
+enum purchase_orders_order_status {
+  rough
+  send
+  stock_in
+}
+
+enum reservation_reminders_status {
+  pending
+  sent
+  failed
+}
+
+enum reservation_status_logs_changed_by_type {
+  member
+  admin
+  system
+}
+
+enum adoption_pets_sex {
+  M
+  F
+  U
+}
+
+enum place_photos_photo_type {
+  official
+  user_review
+}
+
+enum promotions_promo_status {
+  pending
+  active
+  ended
+}
+
+enum restaurant_seats_status {
+  available
+  occupied
+  unavailable
+}
+
+enum ship_items_delivery {
+  stocking
+  delivered
+  arrived
+}
+
+enum members_status {
+  pending
+  active
+  suspended
+}
+
+enum promotions_promo_type {
+  count
+  combo
+  itemType
+  amount
+  freeShipping
+}
+
+enum adoption_pets_status {
+  available
+  pending
+  adopted
+}
+
+enum forum_comments_target_type {
+  blog
+  vlog
+  comment
+}
+
+enum reservations_status {
+  pending
+  confirmed
+  arrived
+  cancelled
+  no_show
+  completed
+}
+
+enum restaurants_type {
+  cat_friendly
+  dog_friendly
+  pet_friendly
+}
+
+enum restaurants_status {
+  active
+  suspended
+}

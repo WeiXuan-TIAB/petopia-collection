@@ -1,0 +1,31 @@
+name: Sync Backend to petopia-collection
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout petopia-backend
+        uses: actions/checkout@v4
+
+      - name: Clone petopia-collection repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PETOPIA_TOKEN }}@github.com/WeiXuan-TIAB/petopia-collection.git
+          cd petopia-collection
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 清空並建立 back-end 資料夾
+          rm -rf back-end
+          mkdir -p back-end
+
+          # 複製後端專案內容過去（排除 .git）
+          rsync -av --exclude='.git' ../ back-end/
+
+          git add .
+          git commit -m "Sync backend from petopia-backend" || echo "No changes"
+          git push origin main --force

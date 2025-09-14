@@ -1,0 +1,25 @@
+// 路由段對應中文名稱
+export const pageTitleMap = {
+  member: '會員中心',
+  profile: '修改會員資料',
+  register:'會員註冊',
+  orders: '我的訂單',
+  favorites: '我的收藏',
+  'forget-password': '忘記密碼',
+  'reset-password': '重設密碼',
+  login: '會員登入',
+  'profile-password': '修改密碼',
+  restaurant: '吃吃',
+  product: '商品列表',
+  cart: '購物車',
+  'pay-info': '付款資訊',
+  success:'訂單建立成功',
+  index:'逛逛',
+  map:'寵物友善地圖',
+  travel:'玩玩',
+  forum:'聊聊',
+  'create-edit':'聊聊-創作頁',
+  'list':'聊聊-文章列表',
+  'article':'聊聊-文章頁',
+  'forum-search':'聊聊-搜尋'
+}

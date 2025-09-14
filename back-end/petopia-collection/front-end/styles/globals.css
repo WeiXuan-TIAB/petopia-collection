@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Sansita:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700;1,800;1,900&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: FakePearl-Regular;
+  src: url(https://cdn.jsdelivr.net/gh/max32002/FakePearl@1.1/webfont/FakePearl-Regular.woff2)
+      format('woff2'),
+    url(https://cdn.jsdelivr.net/gh/max32002/FakePearl@1.1/webfont/FakePearl-Regular.woff)
+      format('woff');
+}
+
+:root {
+  --fake-pearl-font: 'FakePearl-Regular', sans-serif;
+  --sansita-font: 'Sansita', sans-serif;
+  --puppy-orange: #ee5a36;
+  --chubby-amber: #f5ab54;
+  --deep-cocoa: #3e2e2e;
+  --peach: #fef1ea;
+  --dusty-sand: #c8b8ac;
+  --white: #ffffff;
+  --black: #000000;
+}
+
+::selection {
+  background-color: var(
+    --puppy-orange
+  ); /* Sets the background color of the selection */
+  color: #ffffff; /* Sets the text color of the selection */
+}
+
+html,
+body {
+  font-family: FakePearl-Regular, sans-serif;
+  background-color: var(--peach);
+  color: var(--deep-cocoa);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased; /* Mac 效果佳，Win有限 */
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+body {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+body[data-scroll-locked] .right-bar {
+  right: 15px !important;
+}
+@-moz-document url-prefix() {
+  body[data-scroll-locked] .right-bar {
+    right: 17.5px !important;
+  }
+}
+
+body[data-scroll-locked] [aria-label="Scroll to top"] {
+  right: calc(1.25rem + 15px) !important;
+}
+@media (min-width: 768px) {
+  body[data-scroll-locked] [aria-label="Scroll to top"] {
+    right: calc(6rem + 15px) !important;
+  }
+}
+
+
+
+.logo {
+  font-family: var(--sansita-font);
+  color: var(--puppy-orange);
+}
+.btn {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  gap: 0.5rem;
+}
+
+.rounded-4xl {
+  border-radius: 32px;
+}
+
+/* 確保地圖容器有正確的高度 */
+.leaflet-container {
+  height: 100vh !important;
+  width: 100% !important;
+  z-index: 1;
+}
+
+/* 修復自定義標記樣式 */
+.custom-marker-with-distance,
+.user-location-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* 確保地圖面板的 z-index */
+.leaflet-control-container {
+  z-index: 1000;
+}
+
+.leaflet-control-zoom {
+  top: 60px !important; /* ✅ 往下移動，視情況調整 px 值 */
+  left: 5px !important; /* 可視需要微調 */
+  z-index: 1001 !important; /* 確保不被覆蓋 */
+}
+
+.leaflet-pane {
+  z-index: 500 !important;
+}
+
+.leaflet-control-zoom {
+  top: 60px !important; /* ✅ 往下移動，視情況調整 px 值 */
+  left: 5px !important; /* 可視需要微調 */
+  z-index: 1001 !important; /* 確保不被覆蓋 */
+
+}
+
+.bg-cover {
+  background-size: cover;
+}
+
+.bg-center {
+  background-position: center;
+}
+
+.bg-no-repeat {
+  background-repeat: no-repeat;
+}
+
+@layer components {
+  .my-datepicker.react-datepicker {
+    @apply bg-white border-none shadow-xl shadow-[#f0cdba] rounded-3xl overflow-hidden p-5 -mt-2;
+  }
+  .my-datepicker .react-datepicker__header {
+    @apply bg-transparent border-b-primary/30 border-b-2 border-dotted;
+  }
+  .my-datepicker .react-datepicker__today-button {
+    @apply bg-brand-warm hover:bg-primary transition-all duration-300 text-white border-none rounded-full;
+  }
+  .my-datepicker .react-datepicker__day--selected {
+    @apply bg-primary/90 hover:!bg-primary text-white;
+  }
+  .my-datepicker .react-datepicker__day--keyboard-selected {
+    @apply bg-primary/20 hover:!bg-primary hover:text-white;
+  }
+  .my-datepicker .react-datepicker__navigation {
+    @apply top-4;
+  }
+} /* React-Quill 工具列層級修正 */
+.ql-toolbar {
+  z-index: 1000 !important;
+}
+
+.ql-editor {
+  z-index: 999 !important;
+}
+
+.ql-tooltip {
+  z-index: 1001 !important;
+  position: fixed !important;
+}
+
+.ql-tooltip input[type='text'] {
+  z-index: 1002 !important;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE & Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+.hide-footer footer {
+  display: none !important;
+}
+
+.hide-rightsidebar [data-sidebar='right'],
+.hide-rightsidebar .rightsidebar,
+.hide-rightsidebar .right-sidebar {
+  display: none !important;
+}
+
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE/Edge (舊) */
+    scrollbar-width: none;    /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;            /* Chrome/Safari */
+  }
+}

@@ -1,0 +1,25 @@
+import Image from "next/image";
+
+export default function CardDog() {
+  return (
+    <div className="w-[150px] h-40 px-2 inline-flex justify-start items-end gap-2.5 group cursor-pointer">
+      <div className="flex-1 inline-flex flex-col justify-start items-center">
+        <Image 
+        width={80} 
+        height={115} 
+        className="relative z-10 w-24 h-[120px] object-contain"
+        src="/images/animal_svg/狗.svg"
+        alt="狗狗專區"
+        unoptimized
+        priority
+        />
+        <div className="self-stretch w-[134px] h-[138px] py-2 bg-brand-warm5 rounded-tl-[200px] rounded-tr-[200px] rounded-bl-[52px] rounded-br-[52px]
+        transition-all duration-300
+        group-hover:bg-brand-warm group-hover:shadow-[0px_10px_25px_0px_rgba(0,0,0,0.25)] 
+        inline-flex justify-center items-end -mt-[90px]">
+          <div className="text-center justify-start text-white text-xl font-normal font-['FakePearl'] leading-loose">狗狗專區</div>
+        </div>
+      </div>
+    </div>
+  )
+}
