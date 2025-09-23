@@ -14,9 +14,6 @@ import { serverConfig } from '../config/server.config.js'
 import { pathToFileURL } from 'url'
 import 'dotenv/config.js'
 
-// 🚀 啟動日誌
-console.log("🚀 Backend starting...")
-
 // 建立 Express 應用程式
 const app = express()
 
@@ -41,7 +38,6 @@ app.use(express.static(path.join(process.cwd(), 'public')))
 let sessionStore = null
 
 if (process.env.REDIS_URL) {
-  console.log("ℹ️ Using Redis session store")
   const redisClient = createClient({
     url: process.env.REDIS_URL,
   })
@@ -51,7 +47,6 @@ if (process.env.REDIS_URL) {
     prefix: 'express-vercel:',
   })
 } else {
-  console.log("ℹ️ Using FileStore session store")
   const FileStore = sessionFileStore(session)
   sessionStore = new FileStore({ logFn: () => { } })
 }
@@ -92,7 +87,6 @@ const apiPath = '/api'
 const routePath = path.join(process.cwd(), 'routes')
 
 try {
-  console.log("🔄 Loading routes from:", routePath)
   const filenames = await fs.readdir(routePath)
 
   for (const filename of filenames) {
@@ -103,7 +97,6 @@ try {
       const mod = await import(pathToFileURL(full))
       const slug = path.basename(filename, path.extname(filename))
       if (mod?.default) {
-        console.log(`✅ Loaded route: ${apiPath}/${slug}`)
         app.use(`${apiPath}/${slug === 'index' ? '' : slug}`, mod.default)
       }
     }
@@ -117,9 +110,6 @@ try {
           const mod = await import(pathToFileURL(subFull))
           const subSlug = path.basename(subFilename, path.extname(subFilename))
           if (mod?.default) {
-            console.log(
-              `✅ Loaded route: ${apiPath}/${path.basename(full)}/${subSlug}`
-            )
             app.use(
               `${apiPath}/${path.basename(full)}/${subSlug === 'index' ? '' : subSlug
               }`,
@@ -139,7 +129,7 @@ app.use((req, res, next) => {
   next(createError(404, `Not Found: ${req.originalUrl}`))
 })
 
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   console.error("❌ Error:", err)
   const status = err.status || 500
   res.status(status).json({
