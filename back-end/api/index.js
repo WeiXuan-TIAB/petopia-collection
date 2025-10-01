@@ -139,6 +139,7 @@ app.use((err, req, res) => {
 })
 
 // ===== 啟動 =====
+
 const port = process.env.PORT || 3005
 app.listen(port, () => console.log(`✅ Server ready on port ${port}`))
 
