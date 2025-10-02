@@ -37,7 +37,7 @@ export const serverConfig = {
     production: {
       channelId: '',
       channelSecret: '',
-      callbackUrl: 'https://petopia-frontend-git-main-tiabs-projects.vercel.app/member/line-login',
+      callbackUrl: 'https://petopia-frontend-lake.vercel.app/member/line-login',
     },
   },
   // 前端接回導向的網址
@@ -46,7 +46,7 @@ export const serverConfig = {
       callbackUrl: 'http://localhost:3000/ship/callback',
     },
     production: {
-      callbackUrl: 'https://petopia-frontend-git-main-tiabs-projects.vercel.app/ship/callback',
+      callbackUrl: 'https://petopia-frontend-lake.vercel.app/ship/callback',
     },
   },
   linePay: {
